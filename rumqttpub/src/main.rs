@@ -109,7 +109,7 @@ fn main() {
 
 fn publish(mut client: Client,  msg: String,  topic: String, freq: String) {
        let n = freq.parse::<i32>().unwrap();
-        for i in 0..4 {
+        for i in 0..7 {
             //let payload = format!("Hello Rustadfafaf {:?} ", i);
             //println!("payload published: {:?}",msg.clone());
             let topic = format!("hello/world");
