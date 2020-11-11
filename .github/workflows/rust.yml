@@ -20,6 +20,6 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: rumqttsub
-        path: target/debug/rumqttsub
+        path: rumqttsub/target/debug/rumqttsub
      
     
