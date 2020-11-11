@@ -1,4 +1,3 @@
-//#![no_std]
 use rumqttc::{MqttOptions,QoS,Client};
 use std::{thread, time::Duration};
 use clap::{Arg, App};
