@@ -103,7 +103,6 @@ fn main() {
                 // }
              } 
     
-    //This is to synchronize the pub and sub  
 }
 
 fn publish(mut client: Client,  msg: String,  topic: String, freq: String) {
