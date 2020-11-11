@@ -9,7 +9,7 @@ fn main() {
             mqtt_options.set_keep_alive(5); 
             let (mut client, mut connection) = Client::new(mqtt_options, 10);
             client.subscribe("hello/world", QoS::ExactlyOnce).unwrap();
-        //    println!("Subscriber mode---------------------------");
+            println!("Subscriber mode---------------------------");
             
             for (i, notification) in connection.iter().enumerate() {
                 if i == 15 {
