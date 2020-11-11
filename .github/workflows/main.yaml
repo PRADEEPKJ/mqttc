@@ -9,6 +9,7 @@ jobs:
        runs-on: ubuntu-latest
        steps:
             - uses: actions/checkout@v1
-            - uses: icepuma/rust-action@main
+            - uses: PRADEEPKJ/mqttc@main
               with:
-                args: cd integration-test && cargo fmt -- --check && cargo clippy -- -Dwarnings && cargo test
+                args: cd rumqttpub  && cargo fmt -- --check && cargo clippy -- -Dwarnings && cargo test
+                args: cd rumqttsub  && cargo fmt -- --check && cargo clippy -- -Dwarnings && cargo test
