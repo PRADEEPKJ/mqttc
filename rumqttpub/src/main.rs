@@ -92,7 +92,7 @@ fn main() {
           
  
     let mut mqttoptions = MqttOptions::new("pub", broker, 1883);
-    mqttoptions.set_keep_alive(5);
+    mqttoptions.set_keep_alive(10);
 
     let (mut client, mut connection) = Client::new(mqttoptions, 1);
     thread::spawn(move || publish(client, msg, mtopic, freq));
