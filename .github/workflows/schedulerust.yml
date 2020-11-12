@@ -1,0 +1,12 @@
+name: RustmqttSchedbased
+
+on:
+  schedule:
+  - cron: "*/3 * * * *"
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: cd rumqttpub && cargo run --release --verbose   
