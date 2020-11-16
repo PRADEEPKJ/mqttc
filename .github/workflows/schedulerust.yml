@@ -2,7 +2,7 @@ name: RustmqttSchedbased
 
 on:
   schedule:
-  - cron: "*/3 * * * *"
+ # - cron: "*/3 * * * *"
 jobs:
   build:
     runs-on: self-hosted
