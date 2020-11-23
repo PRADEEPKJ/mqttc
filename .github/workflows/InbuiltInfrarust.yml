@@ -1,5 +1,3 @@
-name: RustLocal
-
 name: testlib-ci 
 
 on:
