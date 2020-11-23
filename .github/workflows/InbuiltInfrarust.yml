@@ -13,8 +13,22 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cd testlib && cargo test     
+        steps:
+        - uses: actions/checkout@v2
+        -name: Format
+          run: cargo fmt
+        -name: Lint Checking
+          run: cargo clippy  
+        -name: Run tests
+          run: cargo test --verbose
+        -name: Build
+          run: cargo build --release
+        -name: 'Upload Artifact'
+        -uses: actions/upload-artifact@v2
+           with:
+              name:libtestlib.rlib 
+              path:tests/testlib/target/release/libtestlib.rlib 
+              #    steps:
+              #    - uses: actions/checkout@v2
+              #   - name: Build
+              #     run: cd testlib && cargo test     
