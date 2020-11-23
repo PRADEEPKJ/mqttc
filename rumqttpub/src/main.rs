@@ -1,3 +1,4 @@
+#[cfg(test)]
 use rumqttc::{MqttOptions,QoS,Client};
 use std::{thread, time::Duration};
 use clap::{Arg, App};
@@ -94,7 +95,7 @@ fn main() {
     let mut mqttoptions = MqttOptions::new("pub", broker, 1883);
     mqttoptions.set_keep_alive(10);
 
-    let (mut client, mut connection) = Client::new(mqttoptions, 1);
+    let (client, mut connection) = Client::new(mqttoptions, 1);
     thread::spawn(move || publish(client, msg, mtopic, freq));
 
             for __notification in connection.iter().enumerate() {
@@ -103,12 +104,17 @@ fn main() {
                //      break;
                 // }
              } 
+
+         #[test]
+         fn another() {
+                 panic!("Make this test fail");
+         }
     
 }
 
-fn publish(mut client: Client,  msg: String,  topic: String, freq: String) {
-       let n = freq.parse::<i32>().unwrap();
-        for i in 0..10 {
+fn publish(mut client: Client,  _msg: String,  _topic: String, freq: String) {
+       let _n = freq.parse::<i32>().unwrap();
+        for _i in 0..10 {
             //let payload = format!("Hello Rustadfafaf {:?} ", i);
             //println!("payload published: {:?}",msg.clone());
             let topic = format!("hello/world");
