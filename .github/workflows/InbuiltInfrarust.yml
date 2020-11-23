@@ -30,4 +30,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
           name: libtestlib.rlib 
-          path: tests/testlib/target/release/libtestlib.rlib 
+          path: testlib/target/release/libtestlib.rlib 
