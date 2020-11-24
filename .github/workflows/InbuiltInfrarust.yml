@@ -1,4 +1,4 @@
-name: RustLocal
+name: testlib-ci 
 
 on:
   push:
@@ -11,24 +11,27 @@ env:
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-        steps:
-        - uses: actions/checkout@v2
-        -name: Format
-          run: cargo fmt
-        -name: Lint Checking
-          run: cargo clippy  
-        -name: Run tests
-          run: cargo test --verbose
-        -name: Build
-          run: cargo build --release
-        -name: 'Upload Artifact'
-        -uses: actions/upload-artifact@v2
-           with:
-              name:libtestlib.rlib 
-              path:tests/testlib/target/release/libtestlib.rlib 
-              #    steps:
-              #    - uses: actions/checkout@v2
-              #   - name: Build
-              #     run: cd testlib && cargo test     
+    #runs-on: ubuntu-latest
+    runs-on: self-hosted
+    strategy:
+      max-parallel: 3
+    
+      #test 123343
+    defaults:
+      run:
+        working-directory: ./testlib
+    steps:
+    - uses: actions/checkout@v2
+    - name: Format
+      run: cargo fmt
+    - name: Lint Checking
+      run: cargo clippy  
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Build
+      run: cargo build --release
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+          name: libtestlib.rlib 
+          path: testlib/target/release/libtestlib.rlib 
