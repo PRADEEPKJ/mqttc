@@ -1,4 +1,4 @@
-name: testlib-ci 
+name: thinedge_ci
 
 on:
   push:
@@ -11,33 +11,23 @@ env:
 
 jobs:
   build:
-    #runs-on: ubuntu-latest
-    runs-on: ${{ matrix.os}}
-    
-    strategy:
-      matrix:
-        
-       include:
-        - os: ubuntu-latest
-       
-        - os: self-hosted                 
-          
-      #test 123343
-    defaults:
-      run:
-        working-directory: ./testlib
-    steps:
-    - uses: actions/checkout@v2
-    - name: Format
-      run: cargo fmt
-    - name: Lint Checking
-      run: cargo clippy  
-    - name: Run tests
-      run: cargo test --verbose
-    - name: Build
-      run: cargo build --release
-    - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v2
-      with:
-          name: libtestlib.rlib 
-          path: testlib/target/release/libtestlib.rlib 
+     runs-on: ${{ matrix.os}}
+
+     strategy:
+       matrix:
+
+         include:
+          - os: ubuntu-latest
+
+          - os: self-hosted
+
+     steps:
+      - uses: actions/checkout@v2
+      - name: Format
+        run: cargo fmt
+      - name: Lint Checking
+        run: cargo clippy
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Build
+        run: cargo build --release
