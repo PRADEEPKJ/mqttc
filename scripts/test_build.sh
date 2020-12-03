@@ -11,16 +11,11 @@ echo "clippy $result"
 '
 # Run tests
 result=$(cargo test  --verbose)
-if [ result == 0 ]
-then
-  echo "test passed"
+if ! cargo test --verbose
+then;
+  #echo "test passed"
   exit 0
-else
-  echo "test failed"
-  exit -1
 fi
-:'
 # Build
 result=$(cargo build --release)
 echo $result
-'
