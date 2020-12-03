@@ -14,10 +14,10 @@ result=$(cargo test  --verbose)
 if [ result == 0 ]
 then
   echo "test passed"
-  return 1
+  exit 0
 else
   echo "test failed"
-  return 0
+  exit -1
 fi
 :'
 # Build
