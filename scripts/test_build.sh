@@ -11,7 +11,7 @@ echo "clippy $result"
 '
 # Run tests
 result=$(cargo test  --verbose)
-if [ $result == 0 ]
+if [ result == 0 ]
 then
   echo "test passed"
   return 1
