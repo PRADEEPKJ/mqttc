@@ -11,8 +11,8 @@ echo "clippy $result"
 '
 # Run tests
 result=$(cargo test  --verbose)
-if ! cargo test --verbose
-then;
+if ! cargo test;
+then
   #echo "test passed"
   exit 0
 fi
