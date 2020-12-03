@@ -10,8 +10,8 @@ result=$(cargo clippy)
 echo "clippy $result"
 '
 # Run tests
-result=$(cargo test  --verbose)
-if ! cargo test;
+#result=$(cargo test  --verbose)
+if ! cargo test --verbose;
 then
   #echo "test passed"
   exit 0
