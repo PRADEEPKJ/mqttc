@@ -1,10 +1,26 @@
 #!/usr/bin/bash
 
 #check the format of the rust code
-cargo fmt -- --check
+:'
+result=$(cargo fmt -- --check)
+echo "format $result"
+
 # Lint Checking
-cargo clippy
+result=$(cargo clippy)
+echo "clippy $result"
+'
 # Run tests
-cargo test --verbose
+result=$(cargo test  --verbose)
+if [ $result == 0 ]
+then
+  echo "test passed"
+  return 1
+else
+  echo "test failed"
+  return 0
+fi
+:'
 # Build
-cargo build --release
+result=$(cargo build --release)
+echo $result
+'
