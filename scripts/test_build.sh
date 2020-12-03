@@ -14,7 +14,7 @@ echo "clippy $result"
 if ! cargo test --verbose;
 then
   #echo "test passed"
-  exit 0
+  exit 1
 fi
 # Build
 result=$(cargo build --release)
