@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-     runs-on: ${{ matrix.os}}
+     runs-on: ${self_hosted, { matrix.os}}
 
      strategy:
        matrix:
@@ -19,10 +19,9 @@ jobs:
          include:
           - os: ubuntu-latest
 
-          - os: self-hosted
+          - os: ARM64
         
-          - os: self-hosted
-
+          - os: X64
      steps:
       - uses: actions/checkout@v2
       - name: Test and Build script
