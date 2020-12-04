@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-     runs-on: ${self_hosted, { matrix.os}}
+     runs-on: ${{ matrix.os}}
 
      strategy:
        matrix:
