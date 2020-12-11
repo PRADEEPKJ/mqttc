@@ -44,33 +44,28 @@ impl ThinEdgeJson {
         Ok(ThinEdgeJson {
             thinedge_json: input,
         })
-        /*
-        match !input.is_null() {
-               Ok(_input) => return Ok(ThinEdgeJson { thinedge_json: input}),
-               Err(_err) => {
-                   eprintln!("Not a valid json");
-                   return Err(JsonError::InvalidJson);
-               },
-           };
-        */
     }
 
     pub fn into_cumulocity_json(&self, timestamp: &str) -> CumulocityJson {
         println!("thin_edge_obj: \n {:#}", self.thinedge_json);
-        let mut c8yobj = creat_c8yjson_object(timestamp, "ThinEdgeJsonMessage");
+        let mut c8yobj = create_c8yjson_object(timestamp, "ThinEdgeJsonMessage");
         match self.thinedge_json.clone() {
-            //First level object
             json::JsonValue::Object(obj) => {
                 for (k, v) in obj.iter() {
                     match v {
-                        //Second Level object
-                        JsonValue::Number(num) => {
-                            let mut sec_level_obj = JsonValue::new_object();
-                            sec_level_obj.insert(k, create_value_obj(*num)).unwrap();
-                            insert_into_c8yjson(k, sec_level_obj, &mut c8yobj);
+                        JsonValue::Number(num) => { //If Value is number
+                            insert_jsonobj_into_another(
+                                k,
+                                create_valueobject_insert_to_jsonobj(k, *num),
+                                &mut c8yobj.c8yjson,
+                            );
                         }
-                        JsonValue::Object(obj) => {
-                            insert_into_c8yjson(k, translate_complex_object(obj), &mut c8yobj);
+                        JsonValue::Object(obj) => { //If Value is another object
+                            insert_jsonobj_into_another(
+                                k,
+                                translate_complex_object(obj),
+                                &mut c8yobj.c8yjson,
+                            );
                         }
                         _ => println!("Error"),
                     }
@@ -81,6 +76,18 @@ impl ThinEdgeJson {
         //     println!("c8yobj: \n{:#}",c8yobj);
         c8yobj
     }
+}
+
+fn create_valueobject_insert_to_jsonobj(key: &str, value: json::number::Number) -> JsonValue {
+    let mut jsonobj = JsonValue::new_object();
+    jsonobj.insert(key, value);
+    jsonobj
+    /*
+    match jsonobj.insert(key, value) {
+            Ok(obj) => Ok(jsonobj),
+            Err(_e) => eprintln!("Failed to insert the json object into c8yjson"),
+        }
+    */
 }
 
 fn translate_complex_object(obj: &json::object::Object) -> JsonValue {
@@ -97,10 +104,10 @@ fn translate_complex_object(obj: &json::object::Object) -> JsonValue {
     complex_obj
 }
 
-fn insert_into_c8yjson(key: &str, jsonobj: JsonValue, c8yobj: &mut CumulocityJson) {
+fn insert_jsonobj_into_another(key: &str, jsonobj: JsonValue, c8yobj: &mut JsonValue) {
     if !key.is_empty() && !jsonobj.is_null() {
-        match c8yobj.c8yjson.insert(key, jsonobj) {
-            Ok(_obj) => _obj, // println!("Inserted successfully"),
+        match c8yobj.insert(key, jsonobj) {
+            Ok(_obj) => _obj,
             Err(_e) => eprintln!("Failed to insert the json object into c8yjson"),
         }
     } else {
@@ -114,7 +121,7 @@ fn create_value_obj_and_insert_into_jsonobj(
     jsonobj: &mut JsonValue,
 ) {
     match jsonobj.insert(key, create_value_obj(*num)) {
-        Ok(_obj) => _obj, // println!(" Inserted object successfully"),
+        Ok(_obj) => _obj,
         Err(_e) => eprintln!("Failed to insert the json object"),
     }
 }
@@ -131,7 +138,7 @@ fn create_value_obj(value: json::number::Number) -> JsonValue {
     }
 }
 
-fn creat_c8yjson_object(timestamp: &str, c8y_msg_name: &str) -> CumulocityJson {
+fn create_c8yjson_object(timestamp: &str, c8y_msg_name: &str) -> CumulocityJson {
     let mut c8yobj: JsonValue = JsonValue::new_object();
     c8yobj.insert("type", c8y_msg_name).unwrap();
     c8yobj.insert("time", timestamp).unwrap();
