@@ -33,33 +33,28 @@ impl ThinEdgeJson {
     pub fn from_sting(input: &str) -> Result<ThinEdgeJson, JsonError> {
         match json::parse(input) {
             Ok(obj) => return Ok(ThinEdgeJson { thinedge_json: obj }),
-            Err(InvalidJson) => {
+            Err(_err) => {
                 eprintln!("Error while creating the JsonValue");
                 return Err(JsonError::InvalidJson);
             }
         };
     }
 
-    pub fn from_json(input: json::JsonValue) -> ThinEdgeJson {
-        ThinEdgeJson {
+    pub fn from_json(input: json::JsonValue) -> Result<ThinEdgeJson, JsonError> {
+        Ok(ThinEdgeJson {
             thinedge_json: input,
-        }
+        })
         /*
-        match input {
-           json::JsonValue::Object(obj) => {
-               Ok(input) => return Ok(ThinEdgeJson { thinedge_json: input}),
-               Err(InvalidJson) => {
+        match !input.is_null() {
+               Ok(_input) => return Ok(ThinEdgeJson { thinedge_json: input}),
+               Err(_err) => {
                    eprintln!("Not a valid json");
                    return Err(JsonError::InvalidJson);
                },
-           },
-             _=>eprintln!("Error"),
-        };
+           };
         */
     }
 
-
-           
     pub fn into_cumulocity_json(&self, timestamp: &str) -> CumulocityJson {
         println!("thin_edge_obj: \n {:#}", self.thinedge_json);
         let mut c8yobj = creat_c8yjson_object(timestamp, "ThinEdgeJsonMessage");
@@ -75,18 +70,6 @@ impl ThinEdgeJson {
                             insert_into_c8yjson(k, sec_level_obj, &mut c8yobj);
                         }
                         JsonValue::Object(obj) => {
-                            /*
-                            translate_complex_object(obj);
-                            let mut third_level_obj: JsonValue = JsonValue::new_object();
-                            for (k, v) in obj.iter() {
-                                match v {
-                                    //Third level object
-                                    JsonValue::Number(num) => {
-                                        third_level_obj.insert(k, create_value_obj(*num)).unwrap();
-                                    }
-                                    _ => println!("Error"),
-                                }
-                            }*/
                             insert_into_c8yjson(k, translate_complex_object(obj), &mut c8yobj);
                         }
                         _ => println!("Error"),
@@ -103,72 +86,38 @@ impl ThinEdgeJson {
 fn translate_complex_object(obj: &json::object::Object) -> JsonValue {
     let mut complex_obj: JsonValue = JsonValue::new_object();
     for (k, v) in obj.iter() {
-       match v {
+        match v {
             JsonValue::Number(num) => {
-                  complex_obj.insert(k, create_value_obj(*num)).unwrap();
+                create_value_obj_and_insert_into_jsonobj(k, num, &mut complex_obj);
+                complex_obj.insert(k, create_value_obj(*num)).unwrap();
             }
             _ => println!("Error"),
-           }
-    } 
+        }
+    }
     complex_obj
-} 
-
+}
 
 fn insert_into_c8yjson(key: &str, jsonobj: JsonValue, c8yobj: &mut CumulocityJson) {
-        if ! key.is_empty() &&  !jsonobj.is_null()  {
-            match c8yobj.c8yjson.insert(key, jsonobj) {
-                Ok(_obj) => println!("Inserted successfully"),
-                Err(_e) => eprintln!("Failed to insert the json object into c8yjson"), 
-            }
-      } else {
-          eprintln!("The key or jsonobj or is empty");
+    if !key.is_empty() && !jsonobj.is_null() {
+        match c8yobj.c8yjson.insert(key, jsonobj) {
+            Ok(_obj) => _obj, // println!("Inserted successfully"),
+            Err(_e) => eprintln!("Failed to insert the json object into c8yjson"),
         }
-}
-
-
-/*
-fn convert_thinedge_json_to_c8yjson(input: &str) -> JsonValue {
-    let jsonobj = json::parse(input).unwrap();
-    println!("thin_edge_obj: \n {:#}", jsonobj);
-    let mut c8yobj: JsonValue = JsonValue::new_object();
-    c8yobj.insert("type", "ThinEdgeMeasurement").unwrap();
-    c8yobj
-        .insert("time", "2020-06-22T17:03:14.000+02:00")
-        .unwrap();
-    match jsonobj {
-        //First level object
-        json::JsonValue::Object(obj) => {
-            for (k, v) in obj.iter() {
-                match v {
-                    //Second Level object
-                    JsonValue::Number(num) => {
-                        let mut sec_level_obj = JsonValue::new_object();
-                        sec_level_obj.insert(k, create_value_obj(*num)).unwrap();
-                        c8yobj.insert(k, sec_level_obj).unwrap();
-                    }
-                    JsonValue::Object(obj) => {
-                        let mut third_level_obj: JsonValue = JsonValue::new_object();
-                        for (k, v) in obj.iter() {
-                            match v {
-                                //Third level object
-                                JsonValue::Number(num) => {
-                                    third_level_obj.insert(k, create_value_obj(*num)).unwrap();
-                                }
-                                _ => println!("Error"),
-                            }
-                        }
-                        c8yobj.insert(k, third_level_obj).unwrap();
-                    }
-                    _ => println!("Error"),
-                }
-            }
-        }
-        _ => println!("Error"),
+    } else {
+        eprintln!("The key or jsonobj or is empty");
     }
-    //     println!("c8yobj: \n{:#}",c8yobj);
-    c8yobj
 }
-*/
+
+fn create_value_obj_and_insert_into_jsonobj(
+    key: &str,
+    num: &json::number::Number,
+    jsonobj: &mut JsonValue,
+) {
+    match jsonobj.insert(key, create_value_obj(*num)) {
+        Ok(_obj) => _obj, // println!(" Inserted object successfully"),
+        Err(_e) => eprintln!("Failed to insert the json object"),
+    }
+}
 
 fn create_value_obj(value: json::number::Number) -> JsonValue {
     let mut valueobj = JsonValue::new_object();
@@ -188,7 +137,6 @@ fn creat_c8yjson_object(timestamp: &str, c8y_msg_name: &str) -> CumulocityJson {
     c8yobj.insert("time", timestamp).unwrap();
     CumulocityJson { c8yjson: c8yobj }
 }
-
 
 impl fmt::Display for CumulocityJson {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
