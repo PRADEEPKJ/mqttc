@@ -8,6 +8,27 @@ pub enum JsonError {
     InvalidThinEdgeJson,
 }
 
+//With thin edge json enum
+
+struct ThinEdgeJsonO {
+    values: Vec<ThinEdgeValue>,
+}
+
+ enum ThinEdgeValue {
+     Single (SingleMeasurement),
+     Multi (MultiMeasurement),
+ }
+
+ struct SingleMeasurement {
+     name: String,
+     value: json::number::Number,
+ }
+
+ struct MultiMeasurement {
+     name: String,
+     values: Vec<SingleMeasurement>,
+ }
+
 pub struct ThinEdgeJson {
     thinedge_json: JsonValue,
 }
@@ -30,20 +51,40 @@ impl fmt::Display for JsonError {
 }
 
 impl ThinEdgeJson {
+    //From array of bytes->to str->convert then to json
     pub fn from_sting(input: &str) -> Result<ThinEdgeJson, JsonError> {
         match json::parse(input) {
-            Ok(obj) => return Ok(ThinEdgeJson { thinedge_json: obj }),
+            //Check the object for the thin -edge json template 2 level
+            Ok(obj) => ThinEdgeJson::from_json(obj),//Ok(ThinEdgeJson { thinedge_json: obj }), //Check the json is valid then assign
             Err(_err) => {
                 eprintln!("Error while creating the JsonValue");
-                return Err(JsonError::InvalidJson);
+                Err(JsonError::InvalidJson)
             }
-        };
+        }
     }
 
-    pub fn from_json(input: json::JsonValue) -> Result<ThinEdgeJson, JsonError> {
-        Ok(ThinEdgeJson {
-            thinedge_json: input,
-        })
+    //Once we confirm that the json is valid json
+    pub fn from_json(input: json::JsonValue) -> Result<ThinEdgeJsonO, JsonError> {
+           let mut tedge_measurements:ThinEdgeJsonO; 
+            match input.clone() {
+            json::JsonValue::Object(obj) => {
+                for (k, v) in obj.iter() {
+                    match v {
+                        JsonValue::Number(num) => { //Single Value object
+                            tedge_measurements.values.push(ThinEdgeValue::Single(create_single_val_thinedge_struct(k, *num)));  
+                          }
+
+                        JsonValue::Object(obj) => { //Multi value object
+                            tedge_measurements.values.push(ThinEdgeValue::Multi(create_multi_val_thinedge_struct(*obj, k)));
+
+                        }
+                        _ => println!(" Error: Invalid thin edge json "),
+                    }
+                }
+            }
+         
+                 
+       };
     }
 
     pub fn into_cumulocity_json(&self, timestamp: &str) -> CumulocityJson {
@@ -53,44 +94,68 @@ impl ThinEdgeJson {
             json::JsonValue::Object(obj) => {
                 for (k, v) in obj.iter() {
                     match v {
-                        JsonValue::Number(num) => { //If Value is number
-                            insert_jsonobj_into_another(
+                        JsonValue::Number(num) => { //Single Value object
+                            translate_single_value_object(
                                 k,
                                 create_valueobject_insert_to_jsonobj(k, *num),
                                 &mut c8yobj.c8yjson,
                             );
                         }
-                        JsonValue::Object(obj) => { //If Value is another object
-                            insert_jsonobj_into_another(
+                        JsonValue::Object(obj) => { //Multi value object
+                            translate_single_value_object(
                                 k,
-                                translate_complex_object(obj),
+                                translate_multivalue_object(obj),
                                 &mut c8yobj.c8yjson,
                             );
                         }
-                        _ => println!("Error"),
+                        _ => println!(" Error: Invalid thin edge json "),
                     }
                 }
             }
-            _ => println!("Error"),
+            _ => println!("Error : Not a json object"),
         }
         //     println!("c8yobj: \n{:#}",c8yobj);
         c8yobj
     }
 }
 
-fn create_valueobject_insert_to_jsonobj(key: &str, value: json::number::Number) -> JsonValue {
-    let mut jsonobj = JsonValue::new_object();
-    jsonobj.insert(key, value);
-    jsonobj
-    /*
-    match jsonobj.insert(key, value) {
-            Ok(obj) => Ok(jsonobj),
-            Err(_e) => eprintln!("Failed to insert the json object into c8yjson"),
-        }
-    */
+fn create_single_val_thinedge_struct(key: &str, value: json::number::Number) -> SingleMeasurement {
+
+           SingleMeasurement {
+                                     name: String::from(key),
+                                     value ,
+            }
+    }
+
+fn create_multi_val_thinedge_struct(obj:json::object::Object, name: &str) -> MultiMeasurement {
+          let  multi_value_measurements: MultiMeasurement;
+          multi_value_measurements.name = String::from(name);
+          
+          for (k, v) in obj.iter() {
+            match v {
+              JsonValue::Number(num) => { //Single Value object
+                  multi_value_measurements.values.push(create_single_val_thinedge_struct(k, *num));  
+              }
+              _=> eprintln!("Failed to translate, value is not a number, related to name {}", k),
+            }
+          }
+          multi_value_measurements
 }
 
-fn translate_complex_object(obj: &json::object::Object) -> JsonValue {
+fn create_valueobject_insert_to_jsonobj(key: &str, value: json::number::Number) -> JsonValue {
+    let mut value_obj = JsonValue::new_object();
+
+    value_obj.insert(key, value).unwrap(); //We are sure that this call never fails
+    value_obj
+   /*
+    match value_obj.insert(key, value) {
+            Ok(obj) => return value_obj,
+            Err(_e) => return None,// eprintln!("Failed to insert the json object into c8yjson"),
+        }
+   */
+}
+
+fn translate_multivalue_object(obj: &json::object::Object) -> JsonValue {
     let mut complex_obj: JsonValue = JsonValue::new_object();
     for (k, v) in obj.iter() {
         match v {
@@ -98,13 +163,13 @@ fn translate_complex_object(obj: &json::object::Object) -> JsonValue {
                 create_value_obj_and_insert_into_jsonobj(k, num, &mut complex_obj);
                 complex_obj.insert(k, create_value_obj(*num)).unwrap();
             }
-            _ => println!("Error"),
+            _ => println!("Error"), // Specific messages for the error messages, the level should be mentioend in the error msg
         }
     }
     complex_obj
 }
 
-fn insert_jsonobj_into_another(key: &str, jsonobj: JsonValue, c8yobj: &mut JsonValue) {
+fn translate_single_value_object(key: &str, jsonobj: JsonValue, c8yobj: &mut JsonValue) {
     if !key.is_empty() && !jsonobj.is_null() {
         match c8yobj.insert(key, jsonobj) {
             Ok(_obj) => _obj,
