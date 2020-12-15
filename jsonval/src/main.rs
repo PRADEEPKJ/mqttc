@@ -69,25 +69,27 @@ impl ThinEdgeJson {
                     match v {
                         JsonValue::Number(num) => {
                             //Single Value object
-                                create_single_val_thinedge_struct(&mut measurements, k, *num);
-                        },
+                            create_single_val_thinedge_struct(&mut measurements, k, *num);
+                        }
                         JsonValue::Object(obj) => {
                             //Multi value object
                             measurements.push(ThinEdgeValue::Multi(
                                 create_multi_val_thinedge_struct(obj.clone(), k),
                             ));
-                        },
-                        _ => {  eprintln!(" Error: Invalid thin edge json ");
-                               return  Err(JsonError::InvalidThinEdgeJson);
-                        },
+                        }
+                        _ => {
+                            eprintln!(" Error: Invalid thin edge json ");
+                            return Err(JsonError::InvalidThinEdgeJson);
+                        }
                     }
                 }
-            },
-            _ => {  eprintln!("Error: Not a multi-value object"); 
-                    return Err(JsonError::InvalidThinEdgeJson);
-                },
+            }
+            _ => {
+                eprintln!("Error: Not a multi-value object");
+                return Err(JsonError::InvalidThinEdgeJson);
+            }
         };
-        Ok(ThinEdgeJson{
+        Ok(ThinEdgeJson {
             values: measurements,
         })
     }
@@ -99,16 +101,14 @@ impl ThinEdgeJson {
         for v in self.values.iter() {
             match v {
                 ThinEdgeValue::Single(measurement) => {
-                    translate_single_value_object(*measurement, &mut c8yobj.c8yjson);
-                    println!("Its single value measurement");
-                },
+                    translate_single_value_object(measurement, &mut c8yobj.c8yjson);
+                    // println!("Its single value measurement");
+                }
                 ThinEdgeValue::Multi(measurement) => {
-                    translate_multivalue_object(*measurement, &mut c8yobj.c8yjson);
-                    println!("Its multi-val measurement");
-                },
-                _=> eprintln!("Wrong type of measurement"),
+                    translate_multivalue_object(measurement, &mut c8yobj.c8yjson);
+                    // println!("Its multi-val measurement");
+                }
             }
-
         }
         /*
         match self.thinedge_json.clone() {
@@ -143,10 +143,14 @@ impl ThinEdgeJson {
     }
 }
 
-fn create_single_val_thinedge_struct(tedge_measurements: &mut Vec<ThinEdgeValue>, name: &str, value: json::number::Number) {
-   let single_value =  SingleMeasurement {
-                  name: String::from(name),
-                  value,
+fn create_single_val_thinedge_struct(
+    tedge_measurements: &mut Vec<ThinEdgeValue>,
+    name: &str,
+    value: json::number::Number,
+) {
+    let single_value = SingleMeasurement {
+        name: String::from(name),
+        value,
     };
     tedge_measurements.push(ThinEdgeValue::Single(single_value));
 }
@@ -158,11 +162,11 @@ fn create_multi_val_thinedge_struct(obj: json::object::Object, name: &str) -> Mu
         match v {
             JsonValue::Number(num) => {
                 //Single Value object
-               single_value.push(SingleMeasurement {
-                                    name: String::from(k),
-                                    value: *num,
-                          });
-            },
+                single_value.push(SingleMeasurement {
+                    name: String::from(k),
+                    value: *num,
+                });
+            }
             _ => eprintln!(
                 "Failed to translate, value is not a number, related to name {}",
                 k
@@ -175,6 +179,7 @@ fn create_multi_val_thinedge_struct(obj: json::object::Object, name: &str) -> Mu
     }
 }
 
+/*
 fn create_valueobject_insert_to_jsonobj(key: &str, value: json::number::Number) -> JsonValue {
     let mut value_obj = JsonValue::new_object();
 
@@ -188,23 +193,23 @@ fn create_valueobject_insert_to_jsonobj(key: &str, value: json::number::Number) 
     */
 }
 
-fn translate_multivalue_object(multi:MultiMeasurement, c8yjsonobj: &mut JsonValue) {
+*/
+fn translate_multivalue_object(multi: &MultiMeasurement, c8yjsonobj: &mut JsonValue) {
     let mut complex_obj: JsonValue = JsonValue::new_object();
-    for m in multi.values.iter() {
-        match m.value {
-            json::number::Number(num) => {
-                create_value_obj_and_insert_into_jsonobj(&m.name, m.value, &mut complex_obj);
-                complex_obj.insert(&m.name, create_value_obj(m.value)).unwrap();
-            },
-            _ => println!("Error"), // Specific messages for the error messages, the level should be mentioend in the error msg
-        }
+    for s in multi.values.iter() {
+        create_value_obj_and_insert_into_jsonobj(&s.name, s.value, &mut complex_obj);
+        complex_obj
+            .insert(&s.name, create_value_obj(json::from(s.value)))
+            .unwrap();
     }
-    c8yjsonobj.insert(&multi.name, complex_obj);
+    c8yjsonobj.insert(&multi.name, complex_obj).unwrap();
 }
 
-fn translate_single_value_object(single:SingleMeasurement, c8yobj: &mut JsonValue) {
+fn translate_single_value_object(single: &SingleMeasurement, c8yobj: &mut JsonValue) {
     if !single.value.is_empty() {
-        match c8yobj.insert(&single.name, single.value) {
+        let mut single_value_object: JsonValue = JsonValue::new_object();
+        single_value_object.insert(&single.name, create_value_obj(json::from(single.value))).unwrap(); 
+        match c8yobj.insert(&single.name, single_value_object) {
             Ok(_obj) => _obj,
             Err(_e) => eprintln!("Failed to insert the json object into c8yjson"),
         }
@@ -226,8 +231,8 @@ fn create_value_obj_and_insert_into_jsonobj(
 
 fn create_value_obj(value: JsonValue) -> JsonValue {
     let mut valueobj = JsonValue::new_object();
-        valueobj.insert("value", value).unwrap();
-        valueobj
+    valueobj.insert("value", value).unwrap();
+    valueobj
 }
 
 fn create_c8yjson_object(timestamp: &str, c8y_msg_name: &str) -> CumulocityJson {
@@ -251,6 +256,8 @@ fn main() {
 
     let time = "2020-06-22T17:03:14.000+02:00";
 
+    println!("Tedge_Json: {:#}", tjson1);
+
     println!(
         "c8yjson: \n {}",
         ThinEdgeJson::from_sting(tjson1)
@@ -260,7 +267,7 @@ fn main() {
     //        convert_thinedge_json_to_c8yjson(tjson1));
 
     let input = r#"{  
-                       "temperature": 0 ,
+                       "temperature": 23 ,
                 "location": { 
                         "latitude": 32.54, 
                                 "longitude": -117.67, 
@@ -269,6 +276,7 @@ fn main() {
                     "pressure": 98 
     }"#;
 
+    println!("Tedge_Json: {:#}", input);
     println!(
         "c8yjson: \n {}",
         ThinEdgeJson::from_sting(input)
